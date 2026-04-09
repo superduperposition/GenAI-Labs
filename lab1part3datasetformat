@@ -1,0 +1,13 @@
+train_ds = ds["train"]
+
+def format_prompts(batch):
+    formatted_prompts = []
+    for q, cot, resp in zip(batch["Question"], batch["Complex_CoT"], batch["Response"]):
+        text = f"Question:\n{q}\n\nReasoning:\n{cot}\n\nAnswer:\n{resp}"
+        formatted_prompts.append(text)
+    return {"text": formatted_prompts}
+
+formatted_ds = train_ds.map(format_prompts, batched=True)
+split_dataset = formatted_ds.train_test_split(test_size=0.2, seed=99)
+train_dataset = split_dataset["train"]
+validation_dataset = split_dataset["test"]
