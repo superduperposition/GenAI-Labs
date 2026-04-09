@@ -1,0 +1,18 @@
+from peft import PeftModel
+
+tuned_model = "gemma-2-2b-it-finetuned"
+
+base_model = AutoModelForCausalLM.from_pretrained(
+    model_id,
+    low_cpu_mem_usage=True,
+    return_dict=True,
+    torch_dtype=torch.bfloat16,
+)
+
+model = PeftModel.from_pretrained(base_model, tuned_lora_model)
+model = model.merge_and_unload()
+# save final tuned model
+model.save_pretrained(tuned_model)
+tokenizer = AutoTokenizer.from_pretrained(model_id)
+tokenizer.pad_token = tokenizer.eos_token
+tokenizer.padding_side = "right"
