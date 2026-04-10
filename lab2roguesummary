@@ -1,0 +1,49 @@
+rouge = load("rouge")
+
+predictions = []
+references = []
+
+for article, abstract in zip(validation_dataset["Articles"][:15], validation_dataset["Summaries"][:15]):
+    messages = [
+        {
+            "role": "user",
+            "content": f"Instruction:\nSummarize the following article.\n\nInput:\n{article}"
+        },
+    ]
+    input_ids = tokenizer.apply_chat_template(
+        messages,
+        tokenize=True,
+        add_generation_prompt=True,
+        return_tensors="pt"
+    ).to("cuda")
+
+    output = model.generate(
+        input_ids,
+        max_new_tokens=128,
+        do_sample=False
+    )
+
+    prompt_length = input_ids.shape[1]
+    answer = tokenizer.decode(output[0][prompt_length:], skip_special_tokens=True)
+
+    predictions.append(answer)
+    references.append(abstract)
+
+    print(100 * '-')
+    print("Abstract:", abstract)
+    print(100 * '-')
+    print("Model Summary:", answer)
+
+print(100 * '-')
+
+scores = rouge.compute(
+    predictions=predictions,
+    references=references
+)
+
+print("ROUGE-1:", scores["rouge1"])
+print("ROUGE-2:", scores["rouge2"])
+print("ROUGE-L:", scores["rougeL"])
+print("ROUGE-Lsum:", scores["rougeLsum"])
+
+print(100 * '-')
