@@ -16,9 +16,13 @@ peft_model = get_peft_model(model, lora_config)
 print(f'PEFT model parameters to be updated:\n{print_number_of_trainable_model_parameters(peft_model)}\n')
 
 def process_dataset(batch):
-    prompt = [f'Summarize the following conversation:\n{dialogue}\n\nSummary:\n{summary}\n' for dialogue, summary in zip(batch['dialogue'], batch['summary'])]
-    batch['input_ids'] = tokenizer(prompt, padding="max_length", truncation=True, return_tensors="pt").input_ids
-    batch['labels'] = tokenizer(batch["summary"], padding="max_length", truncation=True, return_tensors="pt").input_ids
+    prompts = [f"Summarize the following conversation:\n{dialogue}\n\nSummary:\n" for dialogue in batch["dialogue"]]
+    model_inputs = tokenizer(prompts, padding="max_length", truncation=True, return_tensors="pt")
+    labels = tokenizer(batch["summary"], padding="max_length", truncation=True, return_tensors="pt").input_ids
+    labels[labels == tokenizer.pad_token_id] = -100
+    batch["input_ids"] = model_inputs.input_ids
+    batch["attention_mask"] = model_inputs.attention_mask
+    batch["labels"] = labels
     return batch
 
 processed_dataset = dataset_original.map(process_dataset, batched=True)
