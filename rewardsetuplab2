@@ -1,3 +1,7 @@
+
+Cell 1
+
+
 toxicity_model_name = "facebook/roberta-hate-speech-dynabench-r4-target"
 
 toxicity_tokenizer = AutoTokenizer.from_pretrained(toxicity_model_name)
@@ -5,3 +9,47 @@ toxicity_tokenizer = AutoTokenizer.from_pretrained(toxicity_model_name)
 toxicity_model = AutoModelForSequenceClassification.from_pretrained(toxicity_model_name)
 
 print(toxicity_model.config.id2label)
+
+
+
+
+
+
+
+Cell 2
+
+toxicity_model = toxicity_model.to(device)
+
+non_toxic_text = "You are a great person and I like you"
+
+toxicity_inputs = toxicity_tokenizer(non_toxic_text, return_tensors="pt").to(device)
+
+logits = toxicity_model(**toxicity_inputs).logits
+print(f'logits [not hate, hate]: {logits.tolist()[0]}')
+
+probabilities = torch.softmax(logits, dim=-1).tolist()[0]
+print(f'probabilities [not hate, hate]: {probabilities}')
+
+not_hate_index = 0
+nothate_reward = logits[0][not_hate_index].item()
+print(f'reward (high): {nothate_reward}')
+
+
+
+
+
+Cell 3
+
+toxic_text = "You are disgusting and terrible and i damn hate you"
+
+toxicity_input_ids = toxicity_tokenizer(toxic_text, return_tensors="pt").input_ids.to(device)
+
+logits = toxicity_model(toxicity_input_ids).logits
+print(f'logits [not hate, hate]: {logits.tolist()[0]}')
+
+probabilities = torch.softmax(logits, dim=-1).tolist()[0]
+print(f'probabilities [not hate, hate]: {probabilities}')
+
+not_hate_index = 0
+nothate_reward = logits[0][not_hate_index].item()
+print(f'reward (high): {nothate_reward}')
