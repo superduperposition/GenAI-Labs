@@ -1,0 +1,40 @@
+finetuned_model = "gemma-2-2b-it-finetuned"
+
+peft_config = LoraConfig(
+    r=64,
+    lora_alpha=32,
+    lora_dropout=0.05,
+    target_modules="all-linear",
+    modules_to_save=["lm_head", "embed_token"],
+    task_type="CAUSAL_LM",
+)
+
+if torch.cuda.is_available():
+    torch.cuda.empty_cache()
+
+trainer = SFTTrainer(
+    model=model,
+    args=SFTConfig(
+        output_dir=finetuned_model,
+        per_device_train_batch_size=1,
+        per_device_eval_batch_size=1,
+        gradient_accumulation_steps=4,
+        num_train_epochs=1,
+        learning_rate=2e-4,
+        logging_steps=10,
+        save_strategy="epoch",
+        eval_strategy="epoch",
+        report_to="none",
+        fp16=True,
+        bf16=False,
+    ),
+    train_dataset=train_dataset,
+    eval_dataset=validation_dataset,
+    processing_class=tokenizer,
+    peft_config=peft_config,
+)
+
+model.config.use_cache = False
+result = trainer.train()
+model.config.use_cache = True
+print(result)
