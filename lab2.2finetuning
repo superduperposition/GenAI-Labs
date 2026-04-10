@@ -1,0 +1,51 @@
+lora_config = LoraConfig(
+    r=32,
+    lora_alpha=32,
+    target_modules=["q", "v"],
+    lora_dropout=0.05,
+    bias="none",
+    task_type=TaskType.SEQ_2_SEQ_LM
+)
+
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+
+model = AutoModelForSeq2SeqLM.from_pretrained(model_name, device_map="auto")
+
+peft_model = get_peft_model(model, lora_config)
+
+print(f'PEFT model parameters to be updated:\n{print_number_of_trainable_model_parameters(peft_model)}\n')
+
+def process_dataset(batch):
+    prompt = [f'Summarize the following conversation:\n{dialogue}\n\nSummary:\n{summary}\n' for dialogue, summary in zip(batch['dialogue'], batch['summary'])]
+    batch['input_ids'] = tokenizer(prompt, padding="max_length", truncation=True, return_tensors="pt").input_ids
+    batch['labels'] = tokenizer(batch["summary"], padding="max_length", truncation=True, return_tensors="pt").input_ids
+    return batch
+
+processed_dataset = dataset_original.map(process_dataset, batched=True)
+
+output_dir = "peft-dialogue-finetuned"
+
+trainer = Trainer(
+    model=peft_model,
+    args=TrainingArguments(
+        output_dir=output_dir,
+        per_device_train_batch_size=4,
+        per_device_eval_batch_size=4,
+        num_train_epochs=1,
+        learning_rate=2e-4,
+        logging_steps=10,
+        save_strategy="epoch",
+        eval_strategy="epoch",
+        report_to="none",
+        fp16=torch.cuda.is_available(),
+    ),
+    train_dataset=processed_dataset["train"],
+    eval_dataset=processed_dataset["test"],
+)
+
+trainer.train()
+
+peft_model_path = "./peft-dialogue-summary-checkpoint"
+
+trainer.model.save_pretrained(peft_model_path)
+tokenizer.save_pretrained(peft_model_path)
