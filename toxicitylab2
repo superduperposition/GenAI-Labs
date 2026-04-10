@@ -2,26 +2,6 @@
 Cell 1
 
 
-toxicity_model = toxicity_model.to(device)
-
-class ToxicityEvaluator:
-    def compute(self, predictions):
-        if isinstance(predictions, str):
-            predictions = [predictions]
-
-        inputs = toxicity_tokenizer(
-            predictions,
-            padding=True,
-            truncation=True,
-            return_tensors="pt"
-        ).to(device)
-
-        logits = toxicity_model(**inputs).logits
-        probabilities = torch.softmax(logits, dim=-1)[:, 1]
-        return {"toxicity": probabilities.detach().cpu().tolist()}
-
-toxicity_evaluator = ToxicityEvaluator()
-
 
 
 
