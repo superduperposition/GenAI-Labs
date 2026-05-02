@@ -1,0 +1,68 @@
+************************************************************************
+add this to the end of package imports cell
+
+-----------------------------------------------
+from huggingface_hub import login
+
+login()
+
+-----------------------------------------------
+
+this is needed to login to hugging face because it is a gated repo
+
+*************************************************************************
+
+Add this to RAGBot get_model if statement block
+
+----------------------------------------
+ elif self.model == "Gemma":
+            self.model_name = "google/gemma-2-2b-it"
+
+-------------------------------------------
+
+*********************************************************************
+
+Add 'Gemma' to Model_Dropdown in def create_chat_interface function
+
+so that it's
+
+
+---------------------
+  model_dropdown = widgets.Dropdown(
+        options=['Falcon','Gemma', 'More Models Coming Soon!'],
+------------------------
+*********************************************************************************
+
+Replace the inference definition with this
+
+--------------------------------------------
+def inference(self):
+    if self.context_verbosity:
+        print(f"Your Query: {self.full_prompt}")
+
+    messages = [
+        {
+            "role": "user",
+            "content": f"You are a helpful assistant. Use the provided context to answer questions accurately.\n\n{self.full_prompt}"
+        }
+    ]
+
+    text = self.tokenizer.apply_chat_template(
+        messages,
+        tokenize=False,
+        add_generation_prompt=True
+    )
+
+    model_inputs = self.tokenizer([text], return_tensors="pt").to(self.llm.device)
+    generated_ids = self.llm.generate(
+        **model_inputs,
+        max_new_tokens=self.max_tokens,
+        top_k=self.top_k
+    )
+
+    generated_ids = [
+        output_ids[len(input_ids):] for input_ids, output_ids in zip(model_inputs.input_ids, generated_ids)
+    ]
+    response = self.tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
+    return response
+---------------------------------------------------------------------------------------------------------------------
