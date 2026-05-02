@@ -6,29 +6,37 @@ agent = initialize_agent(
     tools=tools,
     llm=model,
     agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
-    verbose=True,
-    handle_parsing_errors=True
+    verbose=False,
+    handle_parsing_errors=True,
+    max_iterations=2,
+    early_stopping_method="generate"
 )
 
-query1 = "In what year was the film Departed with Leonardo Dicaprio released? What is this year raised to the power of 0.43?"
-query2 = "Use the year the film Departed with Leonardo Dicaprio was released to calculate the value of magic_function."
+query1 = "In what year was the film Departed with Leopnardo Dicaprio released? What is this year raised to the power of 0.43?"
+query2 = "Use the year the film Departed with Leopnardo Dicaprio was released to calculate the value of magic_function."
 query3 = "What are the main limitations of DeepSeek-R1?"
 
-response1 = agent.run(query1)
+def run_agent_query(agent_obj, query_text):
+    try:
+        return agent_obj.run(query_text)
+    except Exception as e:
+        return f"Agent failed with error: {e}"
+
+response1 = run_agent_query(agent, query1)
 print("-"*200)
 print("Query 1:", query1)
 print("-"*200)
 print("Response 1:", response1)
 print("-"*200, "\n")
 
-response2 = agent.run(query2)
+response2 = run_agent_query(agent, query2)
 print("-"*200)
 print("Query 2:", query2)
 print("-"*200)
 print("Response 2:", response2)
 print("-"*200, "\n")
 
-response3 = agent.run(query3)
+response3 = run_agent_query(agent, query3)
 print("-"*200)
 print("Query 3:", query3)
 print("-"*200)
