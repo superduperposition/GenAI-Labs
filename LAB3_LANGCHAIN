@@ -1,0 +1,81 @@
+**************************************************************
+---------------------------------REPLACE AGENT BLOCK WITH THIS-------------------------------------------
+from langchain_classic.agents import initialize_agent, AgentType
+
+agent = initialize_agent(
+    tools=tools,
+    llm=model,
+    agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+    verbose=True,
+    handle_parsing_errors=True
+)
+
+query1 = "In what year was the film Departed with Leonardo Dicaprio released? What is this year raised to the power of 0.43?"
+query2 = "Use the year the film Departed with Leonardo Dicaprio was released to calculate the value of magic_function."
+query3 = "What are the main limitations of DeepSeek-R1?"
+
+response1 = agent.run(query1)
+print("-"*200)
+print("Query 1:", query1)
+print("-"*200)
+print("Response 1:", response1)
+print("-"*200, "\n")
+
+response2 = agent.run(query2)
+print("-"*200)
+print("Query 2:", query2)
+print("-"*200)
+print("Response 2:", response2)
+print("-"*200, "\n")
+
+response3 = agent.run(query3)
+print("-"*200)
+print("Query 3:", query3)
+print("-"*200)
+print("Response 3:", response3)
+print("-"*200, "\n")
+--------------------------------------------------------------------------------
+***************************************************************************************
+
+
+************************************************************************************
+-------------------DEEP SEEK R1 BLOCK TODO CELL---------------------------------------  THIS IS A RAG LOOK UP TOOL
+text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=overlap)
+
+index = VectorstoreIndexCreator(
+    embedding=HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2"),
+    text_splitter=text_splitter
+).from_loaders([loader])
+
+results = index.vectorstore.similarity_search(input, k=top_k)
+
+context = "\n".join([document.page_content for document in results])
+-----------------------------------------------------------------------------------------------
+
+**********************************************************************************************
+
+----------------------------REPLACE MODEL CELL WITH GEMMA MODEL---------------------------------- (JETSTREAM AUTHENTICATION ERROR)
+
+from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
+from langchain_huggingface import HuggingFacePipeline
+
+model_name = "google/gemma-2-2b-it"
+
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+llm_model = AutoModelForCausalLM.from_pretrained(
+    model_name,
+    device_map="auto"
+)
+
+pipe = pipeline(
+    "text-generation",
+    model=llm_model,
+    tokenizer=tokenizer,
+    max_new_tokens=1000,
+    temperature=0.1,
+    do_sample=True
+)
+
+model = HuggingFacePipeline(pipeline=pipe)
+
+*****************************************************************************************************
